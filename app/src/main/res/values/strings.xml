@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">通知ログ</string>
+    <string name="service_label">通知ログ（メッセージ記録）</string>
+</resources>
