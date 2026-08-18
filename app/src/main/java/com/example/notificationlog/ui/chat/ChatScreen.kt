@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +49,7 @@ fun ChatScreen(
     conversationKey: String,
     title: String,
     onBack: () -> Unit,
+    onOpenSelfCheck: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val vm: ChatViewModel = viewModel(
@@ -76,6 +78,11 @@ fun ChatScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onOpenSelfCheck) {
+                        Icon(Icons.Filled.Psychology, contentDescription = "送る前にセルフチェック")
                     }
                 }
             )

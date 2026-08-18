@@ -10,14 +10,24 @@ import androidx.navigation.navArgument
 import com.example.notificationlog.App
 import com.example.notificationlog.ui.chat.ChatScreen
 import com.example.notificationlog.ui.home.ConversationListScreen
+import com.example.notificationlog.ui.selfcheck.SelfCheckOnboardingScreen
+import com.example.notificationlog.ui.selfcheck.SelfCheckScreen
 import com.example.notificationlog.ui.settings.SettingsScreen
+import com.example.notificationlog.ui.trend.TrendReportScreen
 
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val CHAT = "chat/{key}/{title}"
+    const val SELF_CHECK = "selfcheck?key={key}&title={title}"
+    const val SELF_CHECK_ONBOARDING = "selfcheck_onboarding"
+    const val TREND = "trend"
+
     fun chat(key: String, title: String): String =
         "chat/${Uri.encode(key)}/${Uri.encode(title)}"
+
+    fun selfCheck(key: String = "", title: String = ""): String =
+        "selfcheck?key=${Uri.encode(key)}&title=${Uri.encode(title)}"
 }
 
 @Composable
@@ -31,7 +41,8 @@ fun AppNav(app: App) {
                 onOpenConversation = { convo ->
                     navController.navigate(Routes.chat(convo.conversationKey, convo.conversationTitle))
                 },
-                onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenSelfCheck = { navController.navigate(Routes.selfCheck()) }
             )
         }
 
@@ -48,14 +59,42 @@ fun AppNav(app: App) {
                 app = app,
                 conversationKey = key,
                 title = title,
+                onBack = { navController.popBackStack() },
+                onOpenSelfCheck = { navController.navigate(Routes.selfCheck(key, title)) }
+            )
+        }
+
+        composable(
+            route = Routes.SELF_CHECK,
+            arguments = listOf(
+                navArgument("key") { type = NavType.StringType; defaultValue = "" },
+                navArgument("title") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            val key = backStackEntry.arguments?.getString("key")?.let(Uri::decode).orEmpty()
+            val title = backStackEntry.arguments?.getString("title")?.let(Uri::decode).orEmpty()
+            SelfCheckScreen(
+                app = app,
+                conversationKey = key,
+                title = title,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(Routes.SELF_CHECK_ONBOARDING) {
+            SelfCheckOnboardingScreen(app = app, onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.TREND) {
+            TrendReportScreen(app = app, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 app = app,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onOpenSelfCheckOnboarding = { navController.navigate(Routes.SELF_CHECK_ONBOARDING) },
+                onOpenTrend = { navController.navigate(Routes.TREND) }
             )
         }
     }

@@ -52,6 +52,17 @@ interface MessageDao {
     )
     fun observeMessages(conversationKey: String): Flow<List<MessageEntity>>
 
+    /** 指定会話の直近メッセージ（新しい順）。セルフチェックの文脈用。 */
+    @Query(
+        """
+        SELECT * FROM messages
+        WHERE conversationKey = :conversationKey
+        ORDER BY timestamp DESC, id DESC
+        LIMIT :limit
+        """
+    )
+    suspend fun getRecent(conversationKey: String, limit: Int): List<MessageEntity>
+
     @Query("DELETE FROM messages")
     suspend fun clearAll()
 

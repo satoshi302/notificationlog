@@ -41,6 +41,8 @@ import com.example.notificationlog.ui.util.AppIcon
 fun SettingsScreen(
     app: App,
     onBack: () -> Unit,
+    onOpenSelfCheckOnboarding: () -> Unit,
+    onOpenTrend: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val vm: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory(app))
@@ -110,6 +112,22 @@ fun SettingsScreen(
                     }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 72.dp), thickness = 0.5.dp)
+            }
+
+            item {
+                Spacer(Modifier.height(24.dp))
+                SectionHeader("セルフチェック（送る前の気づき）")
+                ListItem(
+                    headlineContent = { Text("送信前セルフチェックの設定") },
+                    supportingContent = { Text("有効化・許可（アクセシビリティ／オーバーレイ）") },
+                    modifier = Modifier.clickableRow(onOpenSelfCheckOnboarding)
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 16.dp), thickness = 0.5.dp)
+                ListItem(
+                    headlineContent = { Text("傾向レポート") },
+                    supportingContent = { Text("自分が喧嘩を悪化させやすいパターン") },
+                    modifier = Modifier.clickableRow(onOpenTrend)
+                )
             }
 
             item {

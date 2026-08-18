@@ -3,8 +3,11 @@ package com.example.notificationlog
 import android.app.Application
 import com.example.notificationlog.data.InstalledAppsRepository
 import com.example.notificationlog.data.MessageRepository
+import com.example.notificationlog.data.SelfCheckRepository
 import com.example.notificationlog.data.db.AppDatabase
 import com.example.notificationlog.data.prefs.SettingsRepository
+import com.example.notificationlog.selfcheck.HeuristicAnalyzer
+import com.example.notificationlog.selfcheck.SelfCheckAnalyzer
 
 /**
  * 軽量な手動 DI。Application が各 Repository を保持し、
@@ -22,6 +25,13 @@ class App : Application() {
 
     val installedAppsRepository: InstalledAppsRepository by lazy {
         InstalledAppsRepository(this)
+    }
+
+    val selfCheckAnalyzer: SelfCheckAnalyzer by lazy { HeuristicAnalyzer() }
+
+    val selfCheckRepository: SelfCheckRepository by lazy {
+        val db = AppDatabase.get(this)
+        SelfCheckRepository(db.messageDao(), db.selfCheckDao(), selfCheckAnalyzer)
     }
 
     companion object {

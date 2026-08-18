@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +43,7 @@ fun ConversationListScreen(
     app: App,
     onOpenConversation: (ConversationSummary) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenSelfCheck: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val vm: HomeViewModel = viewModel(factory = HomeViewModel.Factory(app))
@@ -54,6 +56,9 @@ fun ConversationListScreen(
             TopAppBar(
                 title = { Text("トーク") },
                 actions = {
+                    IconButton(onClick = onOpenSelfCheck) {
+                        Icon(Icons.Filled.Psychology, contentDescription = "セルフチェック")
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "設定")
                     }
