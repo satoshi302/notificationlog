@@ -18,11 +18,15 @@ import android.widget.Toast
 /**
  * 送信前の警告を画面上にオーバーレイ表示する。Compose を使わず素の View で構成し、
  * サービスからでも安全に描画できるようにする。すべて端末内で完結。
+ *
+ * チカチカ防止のため、チップは一度出したら消さずに**その場で内容だけ更新**する。
+ * 明示的に [hide] を呼ぶまで表示は維持される。
  */
 class OverlayController(private val context: Context) {
 
     private val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    private var current: View? = null
+    private var chip: TextView? = null
+    private var card: View? = null
 
     fun canDraw(): Boolean = Settings.canDrawOverlays(context)
 
@@ -47,19 +51,23 @@ class OverlayController(private val context: Context) {
 
     private fun dp(v: Int): Int = (v * context.resources.displayMetrics.density).toInt()
 
-    /** 小さなチップ。タップで詳細カードへ。 */
+    /**
+     * 小さなチップ。すでに出ていれば内容を更新するだけ（再描画=チカチカしない）。
+     * タップで詳細カードへ。
+     */
     fun showChip(result: SelfCheckResult, onExpand: () -> Unit) {
         if (!canDraw()) return
-        remove()
-        val chip = TextView(context).apply {
-            text = "⚠ 一歩引いて考える（危険度: ${result.riskLevel.label}）"
-            setTextColor(Color.WHITE)
-            textSize = 14f
-            setPadding(dp(14), dp(10), dp(14), dp(10))
-            background = GradientDrawable().apply {
-                cornerRadius = dp(24).toFloat()
-                setColor(riskColor(result.riskLevel))
-            }
+        removeCard()
+
+        val existing = chip
+        if (existing != null) {
+            existing.setOnClickListener { onExpand() }
+            applyChipStyle(existing, result)
+            return
+        }
+
+        val c = TextView(context).apply {
+            applyChipStyle(this, result)
             setOnClickListener { onExpand() }
         }
         val params = baseParams().apply {
@@ -67,13 +75,28 @@ class OverlayController(private val context: Context) {
             x = dp(12)
             y = dp(96)
         }
-        addView(chip, params)
+        if (runCatching { wm.addView(c, params) }.isSuccess) {
+            chip = c
+        }
+    }
+
+    private fun applyChipStyle(tv: TextView, result: SelfCheckResult) {
+        val newText = "⚠ 一歩引いて考える（危険度: ${result.riskLevel.label}）"
+        if (tv.text?.toString() != newText) tv.text = newText
+        tv.setTextColor(Color.WHITE)
+        tv.textSize = 14f
+        tv.setPadding(dp(14), dp(10), dp(14), dp(10))
+        tv.background = GradientDrawable().apply {
+            cornerRadius = dp(24).toFloat()
+            setColor(riskColor(result.riskLevel))
+        }
     }
 
     /** 詳細カード。検出・受け取られ方・クールダウン・言い換えを表示。 */
     fun showCard(result: SelfCheckResult, onClose: () -> Unit) {
         if (!canDraw()) return
-        remove()
+        removeChip()
+        removeCard()
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -91,7 +114,6 @@ class OverlayController(private val context: Context) {
             root.addView(
                 line("検出: " + result.flags.joinToString("・") { it.category.label }, bold = true)
             )
-            // 最も刺さりやすい1件の「受け取られ方」
             result.flags.maxByOrNull { it.category.weight }?.let { f ->
                 root.addView(line("相手にはこう伝わりやすい: ${f.category.reception}"))
             }
@@ -113,11 +135,10 @@ class OverlayController(private val context: Context) {
 
         val buttons = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            val lp = LinearLayout.LayoutParams(
+            layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(8) }
-            layoutParams = lp
         }
         if (rephrase != null) {
             buttons.addView(Button(context).apply {
@@ -138,18 +159,25 @@ class OverlayController(private val context: Context) {
             width = minOf(dp(340), context.resources.displayMetrics.widthPixels - dp(24))
             gravity = Gravity.CENTER
         }
-        addView(root, params)
-    }
-
-    fun remove() {
-        current?.let {
-            runCatching { wm.removeView(it) }
+        if (runCatching { wm.addView(root, params) }.isSuccess) {
+            card = root
         }
-        current = null
     }
 
-    private fun addView(v: View, params: WindowManager.LayoutParams) {
-        runCatching { wm.addView(v, params) }.onSuccess { current = v }
+    /** チップ・カードの両方を消す。 */
+    fun hide() {
+        removeChip()
+        removeCard()
+    }
+
+    private fun removeChip() {
+        chip?.let { runCatching { wm.removeView(it) } }
+        chip = null
+    }
+
+    private fun removeCard() {
+        card?.let { runCatching { wm.removeView(it) } }
+        card = null
     }
 
     private fun title(text: String, color: Int) = TextView(context).apply {

@@ -54,18 +54,32 @@ class LineWatchAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!enabled || event == null) return
         val pkg = event.packageName?.toString() ?: return
-        // 対象アプリ未選択なら全対象、選択されていればその集合のみ
-        if (targets.isNotEmpty() && pkg !in targets) {
-            clearOverlay(); return
-        }
+
         when (event.eventType) {
+            // 画面（アプリ）が切り替わったとき「だけ」消す判定をする。
+            // キーボード(IME)や画面更新イベントでは消さない＝チカチカ防止。
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                val active = rootInActiveWindow?.packageName?.toString()
+                if (targets.isNotEmpty() && active != null && active !in targets) {
+                    // 対象外アプリを前面に出した → 消す
+                    clearOverlay()
+                } else if (isTarget(pkg)) {
+                    scheduleCheck(pkg)
+                }
+            }
+            // 入力・内容変化・フォーカス: 対象アプリのイベントのみ拾い、それ以外は無視（消さない）
             AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-            AccessibilityEvent.TYPE_VIEW_FOCUSED -> scheduleCheck(pkg)
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> clearOverlay()
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+                if (isTarget(pkg)) scheduleCheck(pkg)
+            }
             else -> {}
         }
     }
+
+    /** 対象アプリか。未選択時は自分自身以外すべてを対象とする。 */
+    private fun isTarget(pkg: String): Boolean =
+        if (targets.isEmpty()) pkg != packageName else pkg in targets
 
     private fun scheduleCheck(pkg: String) {
         pending?.let { mainHandler.removeCallbacks(it) }
@@ -75,7 +89,9 @@ class LineWatchAccessibilityService : AccessibilityService() {
     }
 
     private fun runCheck(pkg: String) {
-        val draft = readFocusedEditableText()?.trim().orEmpty()
+        // 読めない一瞬（フォーカス取得の隙間）は現状維持し、消さない＝チカチカ防止
+        val raw = readFocusedEditableText() ?: return
+        val draft = raw.trim()
         if (draft.length < 4) { clearOverlay(); return }
         if (draft == lastDraft) return
         lastDraft = draft
@@ -86,9 +102,10 @@ class LineWatchAccessibilityService : AccessibilityService() {
             lastResult = result
             mainHandler.post {
                 if (result.riskLevel.score >= threshold) {
+                    // すでに出ていれば内容だけ更新される（再描画しない）
                     overlay.showChip(result) { onExpand() }
                 } else {
-                    overlay.remove()
+                    overlay.hide()
                 }
             }
         }
@@ -113,7 +130,7 @@ class LineWatchAccessibilityService : AccessibilityService() {
 
     private fun clearOverlay() {
         lastDraft = ""
-        mainHandler.post { overlay.remove() }
+        mainHandler.post { overlay.hide() }
     }
 
     override fun onInterrupt() {
@@ -127,7 +144,7 @@ class LineWatchAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         pending?.let { mainHandler.removeCallbacks(it) }
-        overlay.remove()
+        overlay.hide()
         scope.cancel()
         super.onDestroy()
     }
