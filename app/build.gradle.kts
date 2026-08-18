@@ -21,7 +21,22 @@ android {
         }
     }
 
+    signingConfigs {
+        // リポジトリに固定した debug 鍵。CI が毎回新しい鍵を生成するのを防ぎ、
+        // 署名を安定させることで APK の上書き更新（データ保持）を可能にする。
+        // debug 鍵は秘匿情報ではない（標準の認証情報）。
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

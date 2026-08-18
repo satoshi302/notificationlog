@@ -170,6 +170,33 @@ fun SelfCheckOnboardingScreen(
                 }
             )
 
+            Spacer(Modifier.height(16.dp))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("うまくオンにできないとき", fontWeight = FontWeight.Bold)
+                    Text(
+                        "Android 13 以降や Galaxy では、ストア外から入れたアプリの" +
+                            "アクセシビリティが既定でブロックされます（トグルが押せない/すぐ戻る）。\n" +
+                            "その場合は次の手順で解除してください:\n" +
+                            "1. 下のボタンでアプリ情報を開く\n" +
+                            "2. 右上「⋮」→「制限された設定を許可」をタップ\n" +
+                            "3. もう一度、上の②アクセシビリティ設定でオンにする",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = {
+                        context.startActivity(
+                            Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:${context.packageName}")
+                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                    }) {
+                        Text("アプリ情報を開く")
+                    }
+                }
+            }
+
             Spacer(Modifier.height(20.dp))
             Card {
                 Text(
