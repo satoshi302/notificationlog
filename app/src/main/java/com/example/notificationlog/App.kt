@@ -6,6 +6,9 @@ import com.example.notificationlog.data.MessageRepository
 import com.example.notificationlog.data.SelfCheckRepository
 import com.example.notificationlog.data.db.AppDatabase
 import com.example.notificationlog.data.prefs.SettingsRepository
+import com.example.notificationlog.llm.GemmaLlmAdvisor
+import com.example.notificationlog.llm.LlmAdvisor
+import com.example.notificationlog.llm.LlmModelManager
 import com.example.notificationlog.selfcheck.HeuristicAnalyzer
 import com.example.notificationlog.selfcheck.SelfCheckAnalyzer
 
@@ -33,6 +36,10 @@ class App : Application() {
         val db = AppDatabase.get(this)
         SelfCheckRepository(db.messageDao(), db.selfCheckDao(), selfCheckAnalyzer)
     }
+
+    val llmModelManager: LlmModelManager by lazy { LlmModelManager(this) }
+
+    val llmAdvisor: LlmAdvisor by lazy { GemmaLlmAdvisor(this, llmModelManager) }
 
     companion object {
         fun from(context: android.content.Context): App =

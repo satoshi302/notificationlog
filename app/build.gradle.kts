@@ -82,6 +82,9 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
 
+    // オンデバイスLLM（Gemma3 1B を MediaPipe LLM Inference で実行）
+    implementation(libs.mediapipe.tasks.genai)
+
     testImplementation(libs.junit)
 
     debugImplementation(libs.androidx.ui.tooling)

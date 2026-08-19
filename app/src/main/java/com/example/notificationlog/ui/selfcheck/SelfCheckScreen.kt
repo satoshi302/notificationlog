@@ -11,8 +11,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +38,7 @@ fun SelfCheckScreen(
     conversationKey: String,
     title: String,
     onBack: () -> Unit,
+    onOpenLlmSetup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val vm: SelfCheckViewModel = viewModel(
@@ -44,6 +47,7 @@ fun SelfCheckScreen(
     val draft by vm.draft.collectAsStateWithLifecycle()
     val result by vm.result.collectAsStateWithLifecycle()
     val loading by vm.loading.collectAsStateWithLifecycle()
+    val aiState by vm.aiState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier,
@@ -102,6 +106,68 @@ fun SelfCheckScreen(
             result?.let {
                 Spacer(Modifier.height(20.dp))
                 SelfCheckResultCard(it)
+
+                Spacer(Modifier.height(16.dp))
+                FilledTonalButton(
+                    onClick = { vm.runAiAnalysis() },
+                    enabled = aiState !is AiState.Generating,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("AIで詳しく分析（オンデバイス）")
+                }
+                AiSection(aiState, onOpenLlmSetup)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AiSection(state: AiState, onOpenLlmSetup: () -> Unit) {
+    when (state) {
+        is AiState.Idle -> {}
+        is AiState.Generating -> {
+            Spacer(Modifier.height(12.dp))
+            CircularProgressIndicator()
+            Text(
+                "AIが考えています…（初回はモデル読み込みで数十秒かかることがあります）",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        is AiState.NeedModel -> {
+            Spacer(Modifier.height(12.dp))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp)) {
+                    Text("AIモデルが未ダウンロードです。")
+                    Text(
+                        "オンデバイスLLM（Gemma 4 E2B）を使うには、先にモデルを取得してください。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = onOpenLlmSetup) { Text("AIモデルを準備する") }
+                }
+            }
+        }
+        is AiState.Error -> {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "AI分析に失敗しました: ${state.message}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        is AiState.Result -> {
+            Spacer(Modifier.height(12.dp))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(
+                        "AIの分析（オンデバイス）",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(state.text, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }

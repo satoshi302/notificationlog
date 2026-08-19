@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.example.notificationlog.App
 import com.example.notificationlog.ui.chat.ChatScreen
 import com.example.notificationlog.ui.home.ConversationListScreen
+import com.example.notificationlog.ui.llm.LlmSetupScreen
 import com.example.notificationlog.ui.selfcheck.SelfCheckOnboardingScreen
 import com.example.notificationlog.ui.selfcheck.SelfCheckScreen
 import com.example.notificationlog.ui.settings.SettingsScreen
@@ -22,6 +23,7 @@ object Routes {
     const val SELF_CHECK = "selfcheck?key={key}&title={title}"
     const val SELF_CHECK_ONBOARDING = "selfcheck_onboarding"
     const val TREND = "trend"
+    const val LLM_SETUP = "llm_setup"
 
     fun chat(key: String, title: String): String =
         "chat/${Uri.encode(key)}/${Uri.encode(title)}"
@@ -77,7 +79,8 @@ fun AppNav(app: App) {
                 app = app,
                 conversationKey = key,
                 title = title,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onOpenLlmSetup = { navController.navigate(Routes.LLM_SETUP) }
             )
         }
 
@@ -89,12 +92,17 @@ fun AppNav(app: App) {
             TrendReportScreen(app = app, onBack = { navController.popBackStack() })
         }
 
+        composable(Routes.LLM_SETUP) {
+            LlmSetupScreen(app = app, onBack = { navController.popBackStack() })
+        }
+
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 app = app,
                 onBack = { navController.popBackStack() },
                 onOpenSelfCheckOnboarding = { navController.navigate(Routes.SELF_CHECK_ONBOARDING) },
-                onOpenTrend = { navController.navigate(Routes.TREND) }
+                onOpenTrend = { navController.navigate(Routes.TREND) },
+                onOpenLlmSetup = { navController.navigate(Routes.LLM_SETUP) }
             )
         }
     }

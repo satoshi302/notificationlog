@@ -43,6 +43,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenSelfCheckOnboarding: () -> Unit,
     onOpenTrend: () -> Unit,
+    onOpenLlmSetup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val vm: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory(app))
@@ -127,6 +128,12 @@ fun SettingsScreen(
                     headlineContent = { Text("傾向レポート") },
                     supportingContent = { Text("自分が喧嘩を悪化させやすいパターン") },
                     modifier = Modifier.clickableRow(onOpenTrend)
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 16.dp), thickness = 0.5.dp)
+                ListItem(
+                    headlineContent = { Text("AIモデル（オンデバイス）") },
+                    supportingContent = { Text("「AIで詳しく分析」用の Gemma 4 E2B をDL/管理") },
+                    modifier = Modifier.clickableRow(onOpenLlmSetup)
                 )
             }
 
